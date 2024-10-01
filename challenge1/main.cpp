@@ -209,6 +209,12 @@ SparseMatrix<double,RowMajor> SmoothingMatrix(int h, int w){
 //multiplication A1w. Export and upload the resulting image.
 MatrixXd Vec2Mat(VectorXd vec, int height, int width,const std::string output_image_path){
 
+   // Create the "OUTPUT" directory if it doesn't exist
+    std::string output_dir = "OUTPUT";
+
+    // Update the output path to include the "OUTPUT" folder
+    std::string full_output_path = output_dir + "/" + output_image_path ;
+
     MatrixXd mat(height,width);
     int index = 0;
     for (int i = 0; i < height; ++i) {
@@ -224,7 +230,7 @@ MatrixXd Vec2Mat(VectorXd vec, int height, int width,const std::string output_im
   });
 
   // Save the grayscale image using stb_image_write
-  if (stbi_write_png(output_image_path.c_str(), width, height, 1,
+  if (stbi_write_png(full_output_path.c_str(), width, height, 1,
                      grayscale_image.data(), width) == 0) {
     std::cerr << "Error: Could not save grayscale image" << std::endl;
   }
