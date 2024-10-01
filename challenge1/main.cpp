@@ -165,7 +165,7 @@ MatrixXd Noise(MatrixXd img, int height, int width){
   });
 
   // Save the grayscale image using stb_image_write
-  const std::string output_image_path = "output_noised.png";
+  const std::string output_image_path = "./OUTPUT/output_noised.png";
   if (stbi_write_png(output_image_path.c_str(), width, height, 1,
                      grayscale_image.data(), width) == 0) {
     std::cerr << "Error: Could not save grayscale image" << std::endl;
