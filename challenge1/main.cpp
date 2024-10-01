@@ -23,6 +23,7 @@ SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w);
 SparseMatrix<double,RowMajor> EdgeMatrix(int h, int w);
 VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, VectorXd x);
 
+
 int main(int argc, char* argv[]) {
 
   //Task 1. Load the image as an Eigen matrix with size m × n. Each entry in the matrix corresponds
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < height; ++i) {
     for (int j = 0; j < width; ++j) {
       int index = (i * width + j) * 1;  // 1 channel as we are using greyscale
-      img(i, j) = static_cast<double>(image_data[index]); 
+      img(i, j) = static_cast<double>(image_data[index])/(255); // we are from 0:255 to 0:1 
     }
   }
 
@@ -82,6 +83,7 @@ int main(int argc, char* argv[]) {
   Vec2Mat(sharpened_img, height,width,"output_sharpened.png");
   //Task 8
   //Task 9
+  //to be done 
   //Task 10
   SparseMatrix<double,RowMajor> A3 = EdgeMatrix(height,width);
   VectorXd edge_img = filter_grey(A3*v);
@@ -92,6 +94,7 @@ int main(int argc, char* argv[]) {
   VectorXd sys_sol = filter_grey(SolveSystemCG(height,width,A3,w));
   //Task 13
   Vec2Mat(sys_sol,height,width,"output_sysolution.png");
+  //Comment...
   
 
   return 0;
@@ -100,7 +103,7 @@ int main(int argc, char* argv[]) {
 //Filter values > 255 and values < 0
 VectorXd filter_grey(VectorXd v){
   for(int i = 0; i < v.size() ; i++){
-    if( v(i) > 255 ) v(i) = 255;
+    if( v(i) > 1 ) v(i) = 1;
     if( v(i) < 0 ) v(i) =0;
   }
   return v;
@@ -146,12 +149,12 @@ bool checkFactorisation(SparseMatrix<double,RowMajor> mat){
 //Task N.2 Introduce a noise signal into the loaded image by adding random fluctuations of color
 // ranging between [−50, 50] to each pixel. Export the resulting image in .png and upload it
 MatrixXd Noise(MatrixXd img, int height, int width){
-    MatrixXd noise = 50 * (MatrixXd::Random(height,width));
+    MatrixXd noise = 50/255 * (MatrixXd::Random(height,width));
     MatrixXd img_noise = noise + img;
 
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-            if(img_noise(i,j)>255) img_noise(i,j) = 255;
+            if(img_noise(i,j)>1) img_noise(i,j) = 1;
             if(img_noise(i,j)<0) img_noise(i,j) = 0;
         }
     }
@@ -161,7 +164,7 @@ MatrixXd Noise(MatrixXd img, int height, int width){
   Matrix<unsigned char, Dynamic, Dynamic, RowMajor> grayscale_image(height, width);
   // Use Eigen's unaryExpr to map the grayscale values (0.0 to 1.0) to 0 to 255
   grayscale_image = img_noise.unaryExpr([](double val) -> unsigned char {
-    return static_cast<unsigned char>(val);
+    return static_cast<unsigned char>(val*255);
   });
 
   // Save the grayscale image using stb_image_write
@@ -226,7 +229,7 @@ MatrixXd Vec2Mat(VectorXd vec, int height, int width,const std::string output_im
 
   Matrix<unsigned char, Dynamic, Dynamic, RowMajor> grayscale_image(height, width);
   grayscale_image = mat.unaryExpr([](double val) -> unsigned char {
-    return static_cast<unsigned char>(val);
+    return static_cast<unsigned char>(val*255);
   });
 
   // Save the grayscale image using stb_image_write
@@ -253,6 +256,15 @@ SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w){
   return mat;
 }
 
+//Task N.8 Export the Eigen matrix A2 and vector w in the .mtx format.
+
+// Using a suitable iterative
+//solver and preconditioner technique available in the LIS library compute the approximate
+//solution to the linear system A2x= wprescribing a tolerance of 10−9. Report here the
+//iteration count and the final residual.
+
+//Task N.9
+
 
 //Task N.10 Write the convolution operation corresponding to the detection kernel Hlap as a matrix
 //vector multiplication by a matrix A3 having size mn × mn. Is matrix A3 symmetric?
@@ -272,14 +284,23 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   // Set parameters for solver
   double tol = 1.e-10;                 // Convergence tolerance
   int result, maxit = 1000;           // Maximum iterations
+
+
+  isSparseSymmetric(mat,"matsys: "); //sym check done 
+
+  //we MUST CHECK that is SDP....
+
   // Solving 
   Eigen::ConjugateGradient<SpMat, Eigen::Lower|Eigen::Upper> cg;
   cg.setMaxIterations(maxit);
   cg.setTolerance(tol); 
   cg.compute(mat);  //factorization of the matrix
+
   //It's crucial to check that CG is feasible (so mat has to be SDP)
   if( cg.info() == Eigen::Success ){
     
+    //this is not enough... 
+
     x = cg.solve(b); //the actual compution of the solution is done by the fun solve
     cout << "\n#iterations:     " << cg.iterations() << endl;
     cout << "\nrelative residual: " << cg.error()  << endl;
