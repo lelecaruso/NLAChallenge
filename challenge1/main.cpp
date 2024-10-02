@@ -1,6 +1,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <iostream>
+#include <unsupported/Eigen/SparseExtra>
 using namespace std;
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -22,6 +23,7 @@ MatrixXd Vec2Mat(VectorXd vec, int height, int width, const std::string output_i
 SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w);
 SparseMatrix<double,RowMajor> EdgeMatrix(int h, int w);
 VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, VectorXd x);
+VectorXd loadVectorFromMTX(const std::string& filename);
 
 
 int main(int argc, char* argv[]) {
@@ -82,8 +84,37 @@ int main(int argc, char* argv[]) {
   //Task 7
   Vec2Mat(sharpened_img, height,width,"output_sharpened.png");
   //Task 8
-  //Task 9
-  //to be done 
+  Eigen::saveMarket(A2, "matrixA2.mtx");
+  // Export vector in .mtx format
+    int n = w.size();
+    FILE* out = fopen("w.mtx","w");
+    fprintf(out,"%%%%MatrixMarket vector coordinate real general\n");
+    fprintf(out,"%d\n", n);
+    for (int i=0; i<n; i++) {
+        fprintf(out,"%d %f\n", i ,w(i));
+    }
+    fclose(out);
+
+/*
+./test1 matrixA2.mtx w.mtx solchallenge1.mxt hist.txt -i gmres -tol 1.0e-9 -p ilu -ilu_fill 3
+GMRES: number of iterations = 15
+GMRES:   double             = 15
+GMRES:   quad               = 0
+GMRES: elapsed time         = 8.342495e-02 sec.
+GMRES:   preconditioner     = 2.350299e-02 sec.
+GMRES:     matrix creation  = 3.050000e-07 sec.
+GMRES:   linear solver      = 5.992195e-02 sec.
+GMRES: relative residual    = 5.597457e-10
+*/
+
+ //Task 9
+  VectorXd v_market = loadVectorFromMTX("solchallenge1.mtx");
+  Vec2Mat(v_market,height,width,"output_market.png");
+    
+
+  
+  
+  
   //Task 10
   SparseMatrix<double,RowMajor> A3 = EdgeMatrix(height,width);
   VectorXd edge_img = filter_grey(A3*v);
@@ -94,7 +125,7 @@ int main(int argc, char* argv[]) {
   VectorXd sys_sol = filter_grey(SolveSystemCG(height,width,A3,w));
   //Task 13
   Vec2Mat(sys_sol,height,width,"output_sysolution.png");
-  //Comment...
+  //Task 14
   
 
   return 0;
@@ -257,11 +288,12 @@ SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w){
 }
 
 //Task N.8 Export the Eigen matrix A2 and vector w in the .mtx format.
-
 // Using a suitable iterative
 //solver and preconditioner technique available in the LIS library compute the approximate
 //solution to the linear system A2x= wprescribing a tolerance of 10−9. Report here the
 //iteration count and the final residual.
+
+// we are going to use lis 
 
 //Task N.9
 
@@ -285,10 +317,8 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   double tol = 1.e-10;                 // Convergence tolerance
   int result, maxit = 1000;           // Maximum iterations
 
-
-  isSparseSymmetric(mat,"matsys: "); //sym check done 
-
   //we MUST CHECK that is SDP....
+  isSparseSymmetric(mat,"matsys: "); //sym check done 
 
   // Solving 
   Eigen::ConjugateGradient<SpMat, Eigen::Lower|Eigen::Upper> cg;
@@ -299,7 +329,7 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   //It's crucial to check that CG is feasible (so mat has to be SDP)
   if( cg.info() == Eigen::Success ){
     
-    //this is not enough... 
+    //inside the if we know that the decomposition of the matrix it's feasible
 
     x = cg.solve(b); //the actual compution of the solution is done by the fun solve
     cout << "\n#iterations:     " << cg.iterations() << endl;
@@ -310,4 +340,41 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   }
 
   return x;
+}
+
+// Funzione per leggere un file .mtx e salvare i valori della seconda colonna in un VectorXd
+VectorXd loadVectorFromMTX(const std::string& filename) {
+    ifstream infile(filename);
+    if (!infile.is_open()) {
+        cerr << "Errore nell'apertura del file: " << filename << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    string line;
+
+    // Salta le righe di commenti iniziali (linee che iniziano con '%')
+    while (getline(infile, line)) {
+        if (line[0] != '%') {
+            break;
+        }
+    }
+
+    // La prima riga dopo i commenti contiene la dimensione del vettore
+    int numRows;
+    istringstream iss(line);
+    iss >> numRows;
+
+    // Inizializza il VectorXd con il numero di righe lette
+    VectorXd vec(numRows);
+
+    // Legge i valori del vettore dalla seconda colonna
+    int rowIndex;
+    double value;
+    for (int i = 0; i < numRows; ++i) {
+        infile >> rowIndex >> value;
+        vec(i) = value;
+    }
+
+    infile.close();
+    return vec;
 }
