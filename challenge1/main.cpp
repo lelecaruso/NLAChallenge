@@ -83,7 +83,14 @@ int main(int argc, char* argv[]) {
   isSparseSymmetric(A2,"A2");
   //Task 7
   Vec2Mat(sharpened_img, height,width,"output_sharpened.png");
-  //Task 8
+  
+//Task N.8 Export the Eigen matrix A2 and vector w in the .mtx format.
+// Using a suitable iterative
+//solver and preconditioner technique available in the LIS library compute the approximate
+//solution to the linear system A2x= wprescribing a tolerance of 10−9. Report here the
+//iteration count and the final residual.
+
+// we are going to use lis 
   Eigen::saveMarket(A2, "matrixA2.mtx");
   // Export vector in .mtx format
     int n = w.size();
@@ -97,23 +104,20 @@ int main(int argc, char* argv[]) {
 
 /*
 ./test1 matrixA2.mtx w.mtx solchallenge1.mxt hist.txt -i gmres -tol 1.0e-9 -p ilu -ilu_fill 3
-GMRES: number of iterations = 15
-GMRES:   double             = 15
+GMRES: number of iterations = 4
+GMRES:   double             = 4
 GMRES:   quad               = 0
-GMRES: elapsed time         = 8.342495e-02 sec.
-GMRES:   preconditioner     = 2.350299e-02 sec.
-GMRES:     matrix creation  = 3.050000e-07 sec.
-GMRES:   linear solver      = 5.992195e-02 sec.
-GMRES: relative residual    = 5.597457e-10
+GMRES: elapsed time         = 9.051448e-02 sec.
+GMRES:   preconditioner     = 4.580827e-02 sec.
+GMRES:     matrix creation  = 1.514000e-06 sec.
+GMRES:   linear solver      = 4.470621e-02 sec.
+GMRES: relative residual    = 1.813846e-10
 */
 
  //Task 9
   VectorXd v_market = loadVectorFromMTX("solchallenge1.mtx");
   Vec2Mat(v_market,height,width,"output_market.png");
     
-
-  
-  
   
   //Task 10
   SparseMatrix<double,RowMajor> A3 = EdgeMatrix(height,width);
@@ -287,15 +291,7 @@ SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w){
   return mat;
 }
 
-//Task N.8 Export the Eigen matrix A2 and vector w in the .mtx format.
-// Using a suitable iterative
-//solver and preconditioner technique available in the LIS library compute the approximate
-//solution to the linear system A2x= wprescribing a tolerance of 10−9. Report here the
-//iteration count and the final residual.
 
-// we are going to use lis 
-
-//Task N.9
 
 
 //Task N.10 Write the convolution operation corresponding to the detection kernel Hlap as a matrix
