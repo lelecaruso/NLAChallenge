@@ -1,6 +1,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <iostream>
+#include <unsupported/Eigen/SparseExtra>
 using namespace std;
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -22,6 +23,7 @@ MatrixXd Vec2Mat(VectorXd vec, int height, int width, const std::string output_i
 SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w);
 SparseMatrix<double,RowMajor> EdgeMatrix(int h, int w);
 VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, VectorXd x);
+VectorXd loadVectorFromMTX(const std::string& filename);
 
 
 int main(int argc, char* argv[]) {
@@ -81,9 +83,54 @@ int main(int argc, char* argv[]) {
   isSparseSymmetric(A2,"A2");
   //Task 7
   Vec2Mat(sharpened_img, height,width,"output_sharpened.png");
-  //Task 8
-  //Task 9
-  //to be done 
+  
+//Task N.8 Export the Eigen matrix A2 and vector w in the .mtx format.
+// Using a suitable iterative
+//solver and preconditioner technique available in the LIS library compute the approximate
+//solution to the linear system A2x= wprescribing a tolerance of 10−9. Report here the
+//iteration count and the final residual.
+
+// we are going to use lis 
+  Eigen::saveMarket(A2, "matrixA2.mtx");
+  // Export vector in .mtx format
+  int n = w.size();
+  FILE* out = fopen("w.mtx","w");
+  fprintf(out,"%%%%MatrixMarket vector coordinate real general\n");
+  fprintf(out,"%d\n", n);
+  for (int i=0; i<n; i++) {
+      fprintf(out,"%d %f\n", i ,w(i));
+  }
+  fclose(out);
+
+/*
+./test1 matrixA2.mtx w.mtx solchallenge1.mtx hist.txt -i gmres -tol 1.0e-9 -p ilu -ilu_fill 50
+
+number of processes = 1
+matrix size = 87296 x 87296 (435286 nonzero entries)
+
+initial vector x      : all components set to 0
+precision             : double
+linear solver         : GMRES
+preconditioner        : ILU(50)
+convergence condition : ||b-Ax||_2 <= 1.0e-09 * ||b-Ax_0||_2
+matrix storage format : CSR
+linear solver status  : normal end
+
+GMRES: number of iterations = 1
+GMRES:   double             = 1
+GMRES:   quad               = 0
+GMRES: elapsed time         = 9.460886e-02 sec.
+GMRES:   preconditioner     = 5.279537e-02 sec.
+GMRES:     matrix creation  = 2.530000e-07 sec.
+GMRES:   linear solver      = 4.181349e-02 sec.
+GMRES: relative residual    = 1.258422e-13
+*/
+
+ //Task 9
+  VectorXd v_market = loadVectorFromMTX("solchallenge1.mtx");
+  Vec2Mat(v_market,height,width,"output_market.png");
+    
+  
   //Task 10
   SparseMatrix<double,RowMajor> A3 = EdgeMatrix(height,width);
   VectorXd edge_img = filter_grey(A3*v);
@@ -94,7 +141,7 @@ int main(int argc, char* argv[]) {
   VectorXd sys_sol = filter_grey(SolveSystemCG(height,width,A3,w));
   //Task 13
   Vec2Mat(sys_sol,height,width,"output_sysolution.png");
-  //Comment...
+  //Task 14
   
 
   return 0;
@@ -149,7 +196,7 @@ bool checkFactorisation(SparseMatrix<double,RowMajor> mat){
 //Task N.2 Introduce a noise signal into the loaded image by adding random fluctuations of color
 // ranging between [−50, 50] to each pixel. Export the resulting image in .png and upload it
 MatrixXd Noise(MatrixXd img, int height, int width){
-    MatrixXd noise = 50/255 * (MatrixXd::Random(height,width));
+    MatrixXd noise = 50.0/255.0 * (MatrixXd::Random(height,width));
     MatrixXd img_noise = noise + img;
 
     for (int i = 0; i < height; ++i) {
@@ -256,14 +303,7 @@ SparseMatrix<double,RowMajor> SharpeningMatrix(int h, int w){
   return mat;
 }
 
-//Task N.8 Export the Eigen matrix A2 and vector w in the .mtx format.
 
-// Using a suitable iterative
-//solver and preconditioner technique available in the LIS library compute the approximate
-//solution to the linear system A2x= wprescribing a tolerance of 10−9. Report here the
-//iteration count and the final residual.
-
-//Task N.9
 
 
 //Task N.10 Write the convolution operation corresponding to the detection kernel Hlap as a matrix
@@ -285,13 +325,12 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   double tol = 1.e-10;                 // Convergence tolerance
   int result, maxit = 1000;           // Maximum iterations
 
-
+  //we MUST CHECK that is SDP....
   isSparseSymmetric(mat,"matsys: "); //sym check done 
 
-  //we MUST CHECK that is SDP....
-
   // Solving 
-  Eigen::ConjugateGradient<SpMat, Eigen::Lower|Eigen::Upper> cg;
+  //Eigen::ConjugateGradient<SpMat, Eigen::Lower|Eigen::Upper> cg;
+  Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper, Eigen::IncompleteLUT<double>> cg;
   cg.setMaxIterations(maxit);
   cg.setTolerance(tol); 
   cg.compute(mat);  //factorization of the matrix
@@ -299,7 +338,7 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   //It's crucial to check that CG is feasible (so mat has to be SDP)
   if( cg.info() == Eigen::Success ){
     
-    //this is not enough... 
+    //inside the if we know that the decomposition of the matrix it's feasible
 
     x = cg.solve(b); //the actual compution of the solution is done by the fun solve
     cout << "\n#iterations:     " << cg.iterations() << endl;
@@ -310,4 +349,41 @@ VectorXd SolveSystemCG(int h, int w, SparseMatrix<double,RowMajor> mat, SpVec b)
   }
 
   return x;
+}
+
+// Funzione per leggere un file .mtx e salvare i valori della seconda colonna in un VectorXd
+VectorXd loadVectorFromMTX(const std::string& filename) {
+    ifstream infile(filename);
+    if (!infile.is_open()) {
+        cerr << "Errore nell'apertura del file: " << filename << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    string line;
+
+    // Salta le righe di commenti iniziali (linee che iniziano con '%')
+    while (getline(infile, line)) {
+        if (line[0] != '%') {
+            break;
+        }
+    }
+
+    // La prima riga dopo i commenti contiene la dimensione del vettore
+    int numRows;
+    istringstream iss(line);
+    iss >> numRows;
+
+    // Inizializza il VectorXd con il numero di righe lette
+    VectorXd vec(numRows);
+
+    // Legge i valori del vettore dalla seconda colonna
+    int rowIndex;
+    double value;
+    for (int i = 0; i < numRows; ++i) {
+        infile >> rowIndex >> value;
+        vec(i) = value;
+    }
+
+    infile.close();
+    return vec;
 }
