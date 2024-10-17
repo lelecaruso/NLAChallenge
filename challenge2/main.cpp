@@ -13,45 +13,6 @@ using SpMat=Eigen::SparseMatrix<double,Eigen::RowMajor>;
 using SpVec=Eigen::VectorXd;
 using namespace Eigen; //shorcut for eigen declaration
 
-<<<<<<< HEAD
-
-int main(int argc, char* argv[]) {
-
-  //Task 1. Load the image as an Eigen matrix with size m × n. Each entry in the matrix corresponds
-  //to a pixel on the screen and takes a value somewhere between 0 (black) and 255 (white).
-  //Report the size of the matrix
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <image_path>" << std::endl;
-    return 1;
-  }
-
-  const char* input_image_path = argv[1];
-
-  // Load the image using stb_image
-  int width, height, channels;
-  unsigned char* image_data = stbi_load(input_image_path, &width, &height, &channels, 1);  // Since we have a greyscale image we use only 1 channel
-  if (!image_data) {
-    std::cerr << "Error: Could not load image " << input_image_path << std::endl;
-    return 1;
-  }
-
- cout << "Image loaded "<<endl;
-
-  MatrixXd img(height,width);
-  
-  // Fill the matrices with image data
-  for (int i = 0; i < height; ++i) {
-    for (int j = 0; j < width; ++j) {
-      int index = (i * width + j) * 1;  // 1 channel as we are using greyscale
-      img(i, j) = static_cast<double>(image_data[index])/(255); // we are scaling from 0:255 to 0:1 
-    }
-  }
-
-  // Free memory
-  stbi_image_free(image_data);
-
-  return 0;
-=======
 MatrixXd loadimg(const char* input_image_path);
 void storeImg(MatrixXd img,int height, int width, const std::string output_image_path);
 
@@ -60,8 +21,32 @@ int main(int argc, char* argv[]){
         std::cerr << "Usage: " << argv[0] << " <image_path>" << std::endl;
         return 1;}
 
-    const char* input_image_path = argv[1];
-    MatrixXd img = loadimg(input_image_path);
+
+    // Task 1
+    /*
+    Load the image as an Eigen matrix A with size m×n. Each entry in the matrix corresponds
+    to a pixel on the screen and takes a value somewhere between 0 (black) and 255 (white).
+    Compute the matrix product A^TA and report the euclidean norm of A^TA
+    */
+
+   const char* input_image_path = argv[1];
+   MatrixXd img = loadimg(input_image_path);
+
+   MatrixXd A_transpose = img.transpose();
+   //Verifico le dimensioni della matrice 
+   int rows = A_transpose.rows();
+   int cols = A_transpose.cols();
+   std::cout << "The transpose matrix has dimensions: " << rows << " x " << cols << std::endl;
+
+   MatrixXd result = A_transpose * img; //salvo il risultato del prodotto 
+   double matrix_norm = result.norm();
+   std::cout << "The matrix has norm: " << matrix_norm << std::endl;
+
+   //Task 2
+   /*
+   Solve the eigenvalue problem ATAx= λxusing the proper solver provided by the Eigen
+   library. Report the two largest computed singular values of A.
+   */
     
     return 0;
 }
@@ -95,5 +80,4 @@ void storeImg(MatrixXd img,int height, int width, const std::string output_image
     }
     else    std::cout << "\nImage saved to " << output_image_path << std::endl;
 
->>>>>>> 152618a6fd29359c9bc3a3f78512ce369fa5d8aa
 }
