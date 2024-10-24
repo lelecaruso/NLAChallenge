@@ -1,5 +1,7 @@
 #include <Eigen/Dense>
+#include <Eigen/SVD>
 #include <Eigen/Sparse>
+#include <Eigen/Core>
 #include <iostream>
 #include <cmath> // per sqrt()
 #include <unsupported/Eigen/SparseExtra>
@@ -18,6 +20,8 @@ MatrixXd loadimg(const char* input_image_path);
 void storeImg(MatrixXd img,int height, int width, const std::string output_image_path);
 MatrixXd createImgChess();
 MatrixXd Noise(MatrixXd img, int height, int width);
+
+MatrixXd reduction_k(int k, MatrixXd reduction_matrix);
 
 int main(int argc, char* argv[]){
     if (argc < 2) {
@@ -134,7 +138,132 @@ Power:   linear solver      = 0.000000e+00 sec.
 Power: relative residual    = 6.868709e-09
   */
 
- //Waiting for SVD lab to be completed
+
+ //Task 5
+ /*
+ Using the SVD module of the Eigen library, perform a singular value decomposition of the
+ matrix A. Report the Euclidean norm of the diagonal matrix Σ of the singular values.
+ */
+//img is the matrix A
+ MatrixXd A = MatrixXd(img); // convert to dense for SVD
+ Eigen::BDCSVD<Eigen::MatrixXd> svd (A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+ MatrixXd sigma =  svd.singularValues().asDiagonal();
+ double norm = sigma.norm();
+ std::cout << "\nSigma norm is:  " << norm << std::endl;
+
+ //Task 6
+ /*
+ (1) C = [u1 u2 . . . uk], D = [σ1v1 σ2v2 . . . σkvk]
+ */
+ /*Compute the matrices C and D described in (1) assuming k = 40 and k = 80. Report the
+ number of nonzero entries in the matrices C and D.*/
+
+ MatrixXd U = svd.matrixU();
+ int rows1 = U.rows();
+ int cols1 = U.cols();
+ std::cout << "The matrix U associated to svd  has dimensions: " << rows1 << " x " << cols1 << std::endl;
+ int k1 = 40;
+ int k2 = 80;
+ MatrixXd C_40(rows1,k1);
+ int nonzeros_C40 = 0;
+
+ for(int i = 0; i<rows1; i++){
+  for(int j=0 ; j<k1;j++){
+     if(U(i,j) != 0 ){
+        nonzeros_C40 ++;
+      }
+      C_40(i,j) = U(i,j);
+  }
+ }
+ int rows2 = C_40.rows();
+ int cols2 = C_40.cols();
+ std::cout << "The C_40 has dimensions: " << rows2 << " x " << cols2 << std::endl;
+
+int nonzeros_C80 = 0;
+MatrixXd C_80(rows1,k2);
+ for(int i = 0; i<rows1; i++){
+  for(int j=0 ; j<k2;j++){
+      if(U(i,j) != 0 ){
+        nonzeros_C80 ++;
+      }
+        C_80(i,j) = U(i,j);
+  }
+ }
+ int rows3 = C_80.rows();
+ int cols3 = C_80.cols();
+ std::cout << "The C_80 has dimensions: " << rows3 << " x " << cols3 << std::endl;
+
+ std::cout <<"Number of non zeros entries for C-40 are:"<<nonzeros_C40 << std:: endl;
+ std::cout <<"Number of non zeros entries for C-80 are:"<<nonzeros_C80 << std:: endl;
+
+ MatrixXd V = svd.matrixV();
+ int rows_v = V.rows();
+ int cols_v = V.cols();
+ std::cout << "The V has dimensions: " << rows_v << " x " << cols_v << std::endl;
+ MatrixXd D_40 = MatrixXd:: Zero(rows_v,k1);
+ MatrixXd D_80= MatrixXd:: Zero (rows_v,k2);
+
+int nonzeros_D40 = 0;
+int nonzeros_D80 = 0;
+
+VectorXd sigma_40 = svd.singularValues().head(k1);  // Prende i primi k1 valori singolari
+// Costruisci la matrice diagonale con asDiagonal()
+MatrixXd sigma_40_diag = sigma_40.asDiagonal();
+
+for(int i = 0; i<rows_v; i++){
+  for(int j=0 ; j<k1;j++){
+     if(V(i,j) != 0 ){
+        nonzeros_D40 ++;
+      }
+      D_40(i,j) = V(i,j);
+  }
+ }
+
+ D_40 = D_40 * sigma_40_diag;
+
+ VectorXd sigma_80 = svd.singularValues().head(k2);  // Prende i primi k1 valori singolari
+// Costruisci la matrice diagonale con asDiagonal()
+MatrixXd sigma_80_diag = sigma_80.asDiagonal();
+
+for(int i = 0; i<rows_v; i++){
+  for(int j=0 ; j<k2;j++){
+     if(V(i,j) != 0 ){
+        nonzeros_D80 ++;
+      }
+      D_80(i,j) = V(i,j);
+  }
+ }
+
+ D_80 = D_80 * sigma_80_diag;
+
+ std::cout <<"Number of non zeros entries for D-40 are:"<<nonzeros_D40 << std:: endl;
+ std::cout <<"Number of non zeros entries for D-80 are:"<<nonzeros_D80 << std:: endl;
+
+ //Task 7
+ /*
+ Compute the compressed images as the matrix product CDT (again for k = 40 and k = 80).
+ Export and upload the resulting images in .png
+ */
+
+MatrixXd result_40 = C_40* D_40.transpose();
+    for (int i = 0; i < result_40.rows(); ++i) {
+        for (int j = 0; j < result_40.cols(); ++j) {
+            if(result_40(i,j)>1) result_40(i,j) = 1;
+            if(result_40(i,j)<0) result_40(i,j) = 0;
+        }
+    }
+storeImg(result_40,result_40.rows(),result_40.cols(),"immagine_compressa_40.png");
+
+
+MatrixXd result_80 = C_80* D_80.transpose();
+   for (int i = 0; i < result_80.rows(); ++i) {
+        for (int j = 0; j < result_80.cols(); ++j) {
+            if(result_80(i,j)>1) result_80(i,j) = 1;
+            if(result_80(i,j)<0) result_80(i,j) = 0;
+        }
+    }
+storeImg(result_80,result_80.rows(),result_80.cols(),"immagine_compressa_80.png");
+
 
  //Task 8
  /*Using Eigen create a black and white checkerboard image (as the one depicted below)
@@ -150,8 +279,97 @@ corresponding to the image*/
   ranging between [−50,50] to each pixel. Export the resulting image in .png and upload it*/
   MatrixXd chessboard_noise = Noise(chessboard, dim_chess_h , dim_chess_w);
 
-  //Missing tasks for SVD
+  //Task 10
+  /*
+  Using the SVD module of the Eigen library, perform a singular value decomposition of the
+  matrix corresponding to the noisy image. Report the two largest computed singular values.
+  */
+ Eigen::BDCSVD<Eigen::MatrixXd> svd_chess (chessboard_noise, Eigen::ComputeThinU | Eigen::ComputeThinV);
+ VectorXd W = svd_chess.singularValues();
+ std::cout << "biggest singular values: " << W(0) << "\n";
+ std::cout << "2nd biggest singular values: " << W(1) << "\n";
+
+ //Task 11
+ /*
+ Starting from the previously computed SVD, create the matrices C and D defined in (1)
+assuming k = 5 and k = 10. Report the size of the matrices C and D
+ */
+MatrixXd C_5 = reduction_k(5,svd_chess.matrixU());
+MatrixXd C_10 = reduction_k(10,svd_chess.matrixU());
+
+ MatrixXd V_chess = svd_chess.matrixV();
+ int rows_v_chess = V_chess.rows();
+ int cols_v_chess = V_chess.cols();
+ int k1_chess = 5;
+ int k2_chess = 10;
+ std::cout << "The V has dimensions: " << rows_v_chess << " x " << cols_v_chess << std::endl;
+ MatrixXd D_5 = MatrixXd:: Zero(rows_v_chess,k1_chess);
+ MatrixXd D_10 = MatrixXd:: Zero (rows_v_chess,k2_chess);
+
+int nonzeros_D5 = 0;
+int nonzeros_D10 = 0;
+
+VectorXd sigma_5 = svd_chess.singularValues().head(k1_chess);  // Prende i primi k1 valori singolari
+// Costruisci la matrice diagonale con asDiagonal()
+MatrixXd sigma_5_diag = sigma_5.asDiagonal();
+
+for(int i = 0; i<rows_v_chess; i++){
+  for(int j=0 ; j<k1_chess;j++){
+     if(V(i,j) != 0 ){
+        nonzeros_D40 ++;
+      }
+      D_5(i,j) = V_chess(i,j);
+  }
+ }
+
+ D_5 = D_5 * sigma_5_diag;
+
+ VectorXd sigma_10 = svd_chess.singularValues().head(k2_chess);  // Prende i primi k1 valori singolari
+// Costruisci la matrice diagonale con asDiagonal()
+MatrixXd sigma_10_diag = sigma_10.asDiagonal();
+
+for(int i = 0; i<rows_v_chess; i++){
+  for(int j=0 ; j<k2_chess;j++){
+     if(V(i,j) != 0 ){
+        nonzeros_D10 ++;
+      }
+      D_10(i,j) = V_chess(i,j);
+  }
+ }
+
+ D_10 = D_10 * sigma_10_diag;
+ std::cout << "The C5 has dimensions: " << C_5.rows() << " x " << C_5.cols() << std::endl; 
+ std::cout << "The C10 has dimensions: " << C_10.rows() << " x " << C_10.cols() << std::endl;
+ std::cout << "The D5 has dimensions: " << D_5.rows()<< " x " << D_10.cols() << std::endl;
+ std::cout << "The D10 has dimensions: " << D_10.rows() << " x " << D_10.cols() << std::endl;
+
+//Task 12
+/*
+Compute the compressed images as the matrix product CDT (again for k = 5 and k = 10).
+Export and upload the resulting images in .png.
+*/
+
+MatrixXd result_5 = C_5 * D_5.transpose();
+    for (int i = 0; i < result_5.rows(); ++i) {
+        for (int j = 0; j < result_5.cols(); ++j) {
+            if(result_5(i,j)>1) result_5(i,j) = 1;
+            if(result_5(i,j)<0) result_5(i,j) = 0;
+        }
+    }
+storeImg(result_5,result_5.rows(),result_5.cols(),"scacchiera_noise_compressa_5.png");
+
+
+MatrixXd result_10 = C_10* D_10.transpose();
+   for (int i = 0; i < result_10.rows(); ++i) {
+        for (int j = 0; j < result_10.cols(); ++j) {
+            if(result_10(i,j)>1) result_10(i,j) = 1;
+            if(result_10(i,j)<0) result_10(i,j) = 0;
+        }
+    }
+storeImg(result_10,result_10.rows(),result_10.cols(),"scacchiera_noise_compressa_10.png");
+
     
+    //Commenta risultati
     return 0;
 }
 
@@ -231,3 +449,8 @@ storeImg(img_noise,height,width,"scacchiera_noise.png");
 return img_noise;
 }
 
+
+MatrixXd reduction_k(int k, MatrixXd reduction_matrix){
+  MatrixXd tmp = reduction_matrix.leftCols(k);
+  return tmp;
+}
