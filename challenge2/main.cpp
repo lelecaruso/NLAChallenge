@@ -201,7 +201,7 @@ MatrixXd C_80(rows1,k2);
  int cols_v = V.cols();
  std::cout << "The V has dimensions: " << rows_v << " x " << cols_v << std::endl;
  MatrixXd D_40 = MatrixXd:: Zero(rows_v,k1);
- MatrixXd D_80= MatrixXd:: Zero (rows_v,k2);
+ MatrixXd D_80 = MatrixXd:: Zero (rows_v,k2);
 
 int nonzeros_D40 = 0;
 int nonzeros_D80 = 0;
@@ -239,13 +239,16 @@ for(int i = 0; i<rows_v; i++){
  std::cout <<"Number of non zeros entries for D-40 are:"<<nonzeros_D40 << std:: endl;
  std::cout <<"Number of non zeros entries for D-80 are:"<<nonzeros_D80 << std:: endl;
 
+ std::cout << "The D_40 has dimensions: " << D_40.rows() << " x " << D_40.cols() << std::endl;
+ std::cout << "The D_80 has dimensions: " << D_80.rows() << " x " << D_80.cols() << std::endl;
+
  //Task 7
  /*
  Compute the compressed images as the matrix product CDT (again for k = 40 and k = 80).
  Export and upload the resulting images in .png
  */
 
-MatrixXd result_40 = C_40* D_40.transpose();
+MatrixXd result_40 = C_40 * D_40.transpose();
     for (int i = 0; i < result_40.rows(); ++i) {
         for (int j = 0; j < result_40.cols(); ++j) {
             if(result_40(i,j)>1) result_40(i,j) = 1;
@@ -255,7 +258,7 @@ MatrixXd result_40 = C_40* D_40.transpose();
 storeImg(result_40,result_40.rows(),result_40.cols(),"immagine_compressa_40.png");
 
 
-MatrixXd result_80 = C_80* D_80.transpose();
+MatrixXd result_80 = C_80 * D_80.transpose();
    for (int i = 0; i < result_80.rows(); ++i) {
         for (int j = 0; j < result_80.cols(); ++j) {
             if(result_80(i,j)>1) result_80(i,j) = 1;
@@ -316,7 +319,7 @@ MatrixXd sigma_5_diag = sigma_5.asDiagonal();
 for(int i = 0; i<rows_v_chess; i++){
   for(int j=0 ; j<k1_chess;j++){
      if(V(i,j) != 0 ){
-        nonzeros_D40 ++;
+        nonzeros_D5 ++;
       }
       D_5(i,j) = V_chess(i,j);
   }
@@ -369,7 +372,15 @@ MatrixXd result_10 = C_10* D_10.transpose();
 storeImg(result_10,result_10.rows(),result_10.cols(),"scacchiera_noise_compressa_10.png");
 
     
-    //Commenta risultati
+    //Task 13
+    /*Compare the compressed images with the original and noisy images. Comment the results.
+
+The compressed images appear much closer to the original image than to the noisy one. 
+This occurs because the first two singular values of the original image are on the order of 10^2, while the remaining greatest singular values are around the order of 10^0. 
+By compressing the image using only 5 or 10 singular values, the main details are preserved, while the high-frequency components representing noise are filtered out. 
+The compressed image with 10 singular values is clearly even more accurate than the one with 5, as it captures additional information by including 5 more singular values.
+As a result, the compressed images visually resemble the original, as the compression highlights the dominant structural features without amplifying the noise components.
+*/
     return 0;
 }
 
