@@ -37,7 +37,7 @@ int main(int argc, char* argv[]){
     //2 since AT*A is symmetric we can use 
     SelfAdjointEigenSolver<MatrixXd> eigensolver(Cov);
     if (eigensolver.info() != Eigen::Success) abort();
-    std::cout << "The two largest eigenvalues of AT*A are:\n" << eigensolver.eigenvalues().tail(2) << std::endl;
+    std::cout << "The two largest SV of A are:\n" << sqrt(eigensolver.eigenvalues().tail(2)[0]) << "\n" << sqrt(eigensolver.eigenvalues().tail(2)[1]) << std::endl;
     //3 
     Eigen::saveMarket(Cov, "mat_market.mtx");
     /*
