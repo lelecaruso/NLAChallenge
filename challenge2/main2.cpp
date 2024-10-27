@@ -103,7 +103,7 @@ This occurs because the first two singular values of the original image are on t
 By compressing the image using only 5 or 10 singular values, the main details are preserved, while the high-frequency components representing noise are filtered out. 
 The compressed image with 5 singular values is  even more similar to the original chessboard(no noise) than the one with 10, as it only includes the most important part of the image descarding the noise.
 As a result, the compressed images visually resemble the original, as the compression highlights the dominant structural features without amplifying the noise components.
-
+*/
     
     return 0;
 }
