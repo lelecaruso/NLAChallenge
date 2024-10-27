@@ -91,7 +91,19 @@ int main(int argc, char* argv[]){
     MatrixXd A5 = filterColor( C5*D5.transpose() );
     storeImg(A5, A5.rows(), A5.cols(), "./output_2/chessT5.png");
     MatrixXd A10 = filterColor( C10*D10.transpose() );
-    storeImg(A10, A10.rows(), A10.cols(), "./output_2/chessT10.png");   
+    storeImg(A10, A10.rows(), A10.cols(), "./output_2/chessT10.png");  
+
+    
+    
+        //Task 13
+    /*Compare the compressed images with the original and noisy images. Comment the results.
+
+The compressed images appear much closer to the original image than to the noisy one. 
+This occurs because the first two singular values of the original image are on the order of 2.5*10^4 and 2.3*10^5, while the remaining  singular values are between the order of [10^2 and 10^0]. 
+By compressing the image using only 5 or 10 singular values, the main details are preserved, while the high-frequency components representing noise are filtered out. 
+The compressed image with 5 singular values is  even more similar to the original chessboard(no noise) than the one with 10, as it only includes the most important part of the image descarding the noise.
+As a result, the compressed images visually resemble the original, as the compression highlights the dominant structural features without amplifying the noise components.
+
     
     return 0;
 }
